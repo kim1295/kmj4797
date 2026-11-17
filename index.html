@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디지털 명함</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Pretendard -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <!-- Font Awesome 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        discord: '#5865F2',
+                        kakao: '#FEE500',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-slate-100 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 transition-colors duration-300 flex items-center justify-center p-4 sm:p-6">
+
+    <!-- 메인 명함 컨테이너 -->
+    <main class="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-zinc-800/80 overflow-hidden transition-all duration-300 relative">
+        
+        <!-- 상단 배너 및 설정 버튼 영역 -->
+        <div class="h-28 bg-gradient-to-tr from-indigo-600 via-purple-600 to-blue-500 dark:from-indigo-900 dark:via-purple-900 dark:to-zinc-900 relative">
+            <!-- 우측 상단 설정 버튼 -->
+            <button id="settingsBtn" aria-label="화면 테마 설정" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/20 hover:bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-transform active:scale-95 focus:outline-none">
+                <i class="fa-solid fa-gear text-lg"></i>
+            </button>
+
+            <!-- 설정 드롭다운 메뉴 -->
+            <div id="settingsMenu" class="hidden absolute top-16 right-4 w-48 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-slate-200 dark:border-zinc-700 p-2 z-30 transform origin-top-right transition-all">
+                <div class="px-3 py-1.5 text-xs font-semibold text-slate-400 dark:text-zinc-400 uppercase tracking-wider">
+                    화면 테마 설정
+                </div>
+                <button onclick="setTheme('dark')" id="themeDarkBtn" class="w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-700/70 transition-colors font-medium">
+                    <span class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-moon text-indigo-400"></i> 어두운 화면
+                    </span>
+                    <i class="fa-solid fa-check text-indigo-500 text-xs" id="checkDark"></i>
+                </button>
+                <button onclick="setTheme('light')" id="themeLightBtn" class="w-full flex items-center justify-between px-3 py-2.5 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-700/70 transition-colors font-medium mt-1">
+                    <span class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-sun text-amber-500"></i> 밝은 화면
+                    </span>
+                    <i class="fa-solid fa-check text-indigo-500 text-xs hidden" id="checkLight"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 프로필 아바타 및 상태 배지 영역 -->
+        <div class="px-6 pb-8 -mt-12 relative">
+            <div class="flex justify-between items-end mb-4">
+                <div class="w-24 h-24 rounded-3xl bg-white dark:bg-zinc-800 p-1.5 shadow-lg border border-slate-100 dark:border-zinc-700">
+                    <div class="w-full h-full rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-zinc-700 dark:to-zinc-800 flex items-center justify-center text-3xl text-indigo-500 dark:text-indigo-400">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                    </div>
+                </div>
+                <!-- 상태 표시 배지 (5번 클릭 시 관리자 인증 모달 호출) -->
+                <button id="statusBadgeBtn" onclick="handleStatusClick()" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 select-none transition-all active:scale-95 focus:outline-none">
+                    <span id="statusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="statusText">연락 가능</span>
+                </button>
+            </div>
+
+            <!-- 이름 및 소개 문구 -->
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    하비
+                </h1>
+                <p class="text-sm text-slate-500 dark:text-zinc-400 mt-1">
+                    아래 채널을 통해 편리하게 연락해 주세요.
+                </p>
+            </div>
+
+            <!-- 1. 전화번호 섹션 (오프라인 상태일 때 자동 숨김 처리) -->
+            <div id="phoneSection" class="mb-6 bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-4 border border-slate-200/70 dark:border-zinc-700/60 transition-all duration-300">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                            <i class="fa-solid fa-phone text-sm"></i>
+                        </div>
+                        <span class="font-semibold text-sm">전화번호 (안심번호)</span>
+                    </div>
+                    <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-zinc-700 text-slate-600 dark:text-zinc-300">
+                        국가번호 +82
+                    </span>
+                </div>
+
+                <!-- 번호 및 상세 안내 표시 -->
+                <div class="space-y-3">
+                    <div class="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-indigo-500/30 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-slate-400 dark:text-zinc-400 mb-0.5">안심번호 (착신전환 연결)</div>
+                            <div class="text-base sm:text-lg font-bold tracking-wide text-slate-900 dark:text-white">
+                                010-7409-4797 <span class="text-xs font-normal text-slate-500">(+82)</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="copyText('010-7409-4797', '전화번호가 복사되었습니다.')" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 transition-colors" title="번호 복사">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                            <a href="tel:+821074094797" class="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors" title="전화 걸기">
+                                <i class="fa-solid fa-phone-volume"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 필수 안내 및 경고 문구 -->
+                    <div class="space-y-2 text-xs">
+                        <!-- 장난전화 경고 -->
+                        <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-start gap-2">
+                            <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0"></i>
+                            <span class="font-semibold">주의: 안심번호입니다. 장난전화는 절대 하지 마세요.</span>
+                        </div>
+                        
+                        <!-- 카카오톡 안내 -->
+                        <div class="p-2.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                            <i class="fa-solid fa-comment-dots mt-0.5 shrink-0 text-amber-500"></i>
+                            <span><strong>카카오톡 친구추가</strong>를 하시면 더욱 다양한 정보를 확인하실 수 있습니다.</span>
+                        </div>
+
+                        <!-- 문자 불가 & 착신전화 안내 -->
+                        <div class="p-2.5 rounded-xl bg-slate-200/60 dark:bg-zinc-700/40 text-slate-600 dark:text-zinc-300 flex items-start gap-2">
+                            <i class="fa-solid fa-circle-info mt-0.5 shrink-0 text-indigo-500"></i>
+                            <span>현재 <strong>문자(SMS) 수신은 어렵습니다.</strong> 음성 <strong>착신전화</strong>는 정상 연결되니 통화로 연락해 주세요.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 디스코드 섹션 -->
+            <div class="mb-6">
+                <h2 class="text-xs font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
+                    Messenger
+                </h2>
+                <button onclick="copyText('@mohave2', '디스코드 아이디(@mohave2)가 복사되었습니다!')" 
+                    class="w-full group flex items-center justify-between p-3.5 rounded-2xl bg-[#5865F2]/10 hover:bg-[#5865F2] border border-[#5865F2]/30 hover:border-[#5865F2] transition-all duration-200 active:scale-[0.99]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[#5865F2] text-white flex items-center justify-center text-lg shadow-sm group-hover:bg-white group-hover:text-[#5865F2] transition-colors">
+                            <i class="fa-brands fa-discord"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs font-medium text-slate-500 dark:text-zinc-400 group-hover:text-indigo-100">Discord (클릭하여 복사)</div>
+                            <div class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-white">@mohave2</div>
+                        </div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-white/80 dark:bg-zinc-800/80 group-hover:bg-white/20 text-xs font-semibold text-[#5865F2] group-hover:text-white flex items-center gap-1.5 transition-colors">
+                        <i class="fa-regular fa-copy"></i> 복사
+                    </div>
+                </button>
+            </div>
+
+            <!-- 3. 이메일 섹션 -->
+            <div>
+                <h2 class="text-xs font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2.5 px-1">
+                    Email Addresses
+                </h2>
+                <div class="space-y-2" id="emailList">
+                    <!-- 이메일 아이템들이 JS로 렌더링되거나 정적으로 배치됨 -->
+                    <!-- Gmail -->
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/70 dark:border-zinc-700/60 hover:border-indigo-500/40 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                                <i class="fa-brands fa-google text-sm"></i>
+                            </div>
+                            <div class="truncate">
+                                <div class="text-[11px] text-slate-400 dark:text-zinc-400">Gmail</div>
+                                <div class="text-sm font-medium truncate">ejfink0403@gmail.com</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0 ml-2">
+                            <button onclick="copyText('ejfink0403@gmail.com', 'Gmail 주소가 복사되었습니다.')" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="이메일 복사">
+                                <i class="fa-regular fa-copy text-sm"></i>
+                            </button>
+                            <a href="mailto:ejfink0403@gmail.com" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="메일 보내기">
+                                <i class="fa-regular fa-paper-plane text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Kakao -->
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/70 dark:border-zinc-700/60 hover:border-indigo-500/40 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 font-bold text-xs">
+                                K
+                            </div>
+                            <div class="truncate">
+                                <div class="text-[11px] text-slate-400 dark:text-zinc-400">Kakao Mail</div>
+                                <div class="text-sm font-medium truncate">ejfink0403@kakao.com</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0 ml-2">
+                            <button onclick="copyText('ejfink0403@kakao.com', 'Kakao 이메일이 복사되었습니다.')" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="이메일 복사">
+                                <i class="fa-regular fa-copy text-sm"></i>
+                            </button>
+                            <a href="mailto:ejfink0403@kakao.com" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="메일 보내기">
+                                <i class="fa-regular fa-paper-plane text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Daum -->
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/70 dark:border-zinc-700/60 hover:border-indigo-500/40 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 font-bold text-xs">
+                                D
+                            </div>
+                            <div class="truncate">
+                                <div class="text-[11px] text-slate-400 dark:text-zinc-400">Daum Mail</div>
+                                <div class="text-sm font-medium truncate">ejfink0403@daum.net</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0 ml-2">
+                            <button onclick="copyText('ejfink0403@daum.net', 'Daum 이메일이 복사되었습니다.')" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="이메일 복사">
+                                <i class="fa-regular fa-copy text-sm"></i>
+                            </button>
+                            <a href="mailto:ejfink0403@daum.net" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="메일 보내기">
+                                <i class="fa-regular fa-paper-plane text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Naver -->
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/70 dark:border-zinc-700/60 hover:border-indigo-500/40 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-bold text-xs">
+                                N
+                            </div>
+                            <div class="truncate">
+                                <div class="text-[11px] text-slate-400 dark:text-zinc-400">Naver Mail</div>
+                                <div class="text-sm font-medium truncate">ejfink0403@naver.com</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0 ml-2">
+                            <button onclick="copyText('ejfink0403@naver.com', 'Naver 이메일이 복사되었습니다.')" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="이메일 복사">
+                                <i class="fa-regular fa-copy text-sm"></i>
+                            </button>
+                            <a href="mailto:ejfink0403@naver.com" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-500 dark:text-zinc-400 transition-colors" title="메일 보내기">
+                                <i class="fa-regular fa-paper-plane text-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 관리자 인증 및 상태 제어 모달 -->
+    <div id="adminModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="w-full max-w-xs bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-zinc-800">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-user-shield text-indigo-500"></i>
+                    관리자 권한 설정
+                </h3>
+                <button onclick="closeAdminModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- 1단계: 비밀번호 입력 화면 -->
+            <div id="adminLoginView" class="space-y-3">
+                <p class="text-xs text-slate-500 dark:text-zinc-400">
+                    상태를 변경하려면 관리자 비밀번호를 입력하세요.
+                </p>
+                <input type="password" id="adminPinInput" maxlength="10" placeholder="비밀번호 입력"
+                    class="w-full px-3.5 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-widest font-bold"
+                    onkeypress="if(event.key === 'Enter') verifyAdminPin()">
+                <p id="adminPinError" class="hidden text-xs text-rose-500 text-center font-medium">
+                    비밀번호가 올바르지 않습니다.
+                </p>
+                <button onclick="verifyAdminPin()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors">
+                    접속하기
+                </button>
+            </div>
+
+            <!-- 2단계: 상태 변경 컨트롤 화면 -->
+            <div id="adminControlView" class="hidden space-y-2.5">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs text-slate-500 dark:text-zinc-400">
+                        변경할 상태를 선택하세요.
+                    </p>
+                    <span id="syncStatusIndicator" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
+                        연결 확인 중...
+                    </span>
+                </div>
+                
+                <button onclick="updateGlobalStatus('available')" class="w-full flex items-center justify-between p-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 transition-colors">
+                    <span class="flex items-center gap-2.5 text-sm font-semibold">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        연락 가능
+                    </span>
+                    <span class="text-[11px] opacity-80">번호 공개</span>
+                </button>
+
+                <button onclick="updateGlobalStatus('dnd')" class="w-full flex items-center justify-between p-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 transition-colors">
+                    <span class="flex items-center gap-2.5 text-sm font-semibold">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                        방해 금지
+                    </span>
+                    <span class="text-[11px] opacity-80">번호 공개</span>
+                </button>
+
+                <button onclick="updateGlobalStatus('offline')" class="w-full flex items-center justify-between p-3 rounded-2xl border border-slate-400/30 bg-slate-500/10 hover:bg-slate-500/20 text-slate-700 dark:text-zinc-300 transition-colors">
+                    <span class="flex items-center gap-2.5 text-sm font-semibold">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                        오프라인
+                    </span>
+                    <span class="text-[11px] font-semibold text-rose-500">번호 숨김</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 알림 메시지 박스 (alert 대신 사용) -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-4 transition-all duration-300">
+        <div class="px-4 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-medium shadow-xl flex items-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600"></i>
+            <span id="toastMessage">복사되었습니다.</span>
+        </div>
+    </div>
+
+    <!-- Firebase 실시간 동기화 모듈 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =========================================================================
+        // [외부 사이트(Netlify, GitHub Pages 등) 배포 시 설정 방법]
+        // 1. Firebase 콘솔(console.firebase.google.com)에서 무료 프로젝트를 생성합니다.
+        // 2. 아래 YOUR_FIREBASE_CONFIG의 null을 지우고 발급받은 firebaseConfig 객체를 붙여넣으세요.
+        // =========================================================================
+        const YOUR_FIREBASE_CONFIG = null; 
+        /* 예시:
+        const YOUR_FIREBASE_CONFIG = {
+            apiKey: "AIzaSy...",
+            authDomain: "my-card.firebaseapp.com",
+            projectId: "my-card",
+            storageBucket: "my-card.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+        */
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'habi-digital-card';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : YOUR_FIREBASE_CONFIG;
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let isSynced = false;
+
+        // 동기화 상태 표시 업데이트
+        function updateSyncIndicator(connected, msg) {
+            isSynced = connected;
+            const indicator = document.getElementById('syncStatusIndicator');
+            if (!indicator) return;
+            if (connected) {
+                indicator.className = "text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400";
+                indicator.innerHTML = '<i class="fa-solid fa-wifi mr-1"></i>실시간 동기화됨';
+            } else {
+                indicator.className = "text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400";
+                indicator.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i>${msg || '로컬 모드'}`;
+            }
+        }
+
+        // UI 상태 반영 함수
+        function applyStatusUI(status) {
+            const badgeBtn = document.getElementById('statusBadgeBtn');
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            const phoneSection = document.getElementById('phoneSection');
+
+            // 기본 클래스 초기화
+            badgeBtn.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border select-none transition-all active:scale-95 focus:outline-none";
+
+            if (status === 'dnd') {
+                // 방해 금지
+                badgeBtn.classList.add('bg-rose-500/10', 'text-rose-600', 'dark:text-rose-400', 'border-rose-500/20');
+                dot.className = "w-2 h-2 rounded-full bg-rose-500";
+                text.textContent = "방해 금지";
+                phoneSection.classList.remove('hidden');
+            } else if (status === 'offline') {
+                // 오프라인 (전화번호 표기 X)
+                badgeBtn.classList.add('bg-slate-500/10', 'text-slate-600', 'dark:text-zinc-400', 'border-slate-500/20');
+                dot.className = "w-2 h-2 rounded-full bg-slate-400";
+                text.textContent = "오프라인";
+                phoneSection.classList.add('hidden');
+            } else {
+                // 기본: 연락 가능
+                badgeBtn.classList.add('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400', 'border-emerald-500/20');
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                text.textContent = "연락 가능";
+                phoneSection.classList.remove('hidden');
+            }
+        }
+
+        // 전역 상태 업데이트 함수 (Firestore 저장)
+        window.updateGlobalStatus = async function(newStatus) {
+            // 즉시 로컬 UI 반영
+            applyStatusUI(newStatus);
+            window.closeAdminModal();
+
+            const statusLabels = {
+                'available': '연락 가능',
+                'dnd': '방해 금지',
+                'offline': '오프라인 (전화번호 숨김)'
+            };
+
+            if (!db || !currentUser) {
+                window.showToast(`'${statusLabels[newStatus]}' 변경됨 (외부 사이트 동기화는 설정 필요)`);
+                return;
+            }
+
+            try {
+                // 규칙 1 준수: /artifacts/{appId}/public/data/{collectionName}/{docId}
+                const statusDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'card_settings', 'profile_status');
+                await setDoc(statusDocRef, {
+                    status: newStatus,
+                    updatedAt: Date.now()
+                }, { merge: true });
+                window.showToast(`모든 방문자에게 '${statusLabels[newStatus]}' 상태가 동기화되었습니다.`);
+            } catch (error) {
+                console.error("상태 동기화 실패:", error);
+                window.showToast("서버 저장 중 오류가 발생했습니다. 권한 설정을 확인해 주세요.");
+            }
+        };
+
+        // Firebase 초기화 및 실시간 구독 시작
+        async function initRealtimeSync() {
+            if (!firebaseConfig) {
+                updateSyncIndicator(false, "서버 키 미설정");
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // 규칙 3 준수: 쿼리 전 인증 완료 대기
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    currentUser = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+
+                if (!currentUser) {
+                    updateSyncIndicator(false, "인증 실패");
+                    return;
+                }
+
+                // 규칙 1 준수 경로로 실시간 리스너 등록
+                const statusDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'card_settings', 'profile_status');
+                onSnapshot(statusDocRef, (docSnap) => {
+                    updateSyncIndicator(true);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data && data.status) {
+                            applyStatusUI(data.status);
+                        }
+                    }
+                }, (error) => {
+                    console.error("실시간 상태 수신 오류:", error);
+                    updateSyncIndicator(false, "수신 오류");
+                });
+            } catch (err) {
+                console.error("동기화 초기화 오류:", err);
+                updateSyncIndicator(false, "연결 실패");
+            }
+        }
+
+        initRealtimeSync();
+    </script>
+
+    <script>
+        // 1. 상태 배지 5번 연속 클릭 감지 및 관리자 모달 로직
+        let statusClickCount = 0;
+        let statusClickTimer = null;
+        let isAdminAuthenticated = false;
+
+        function handleStatusClick() {
+            statusClickCount++;
+            
+            clearTimeout(statusClickTimer);
+            statusClickTimer = setTimeout(() => {
+                statusClickCount = 0;
+            }, 2000); // 2초 내에 5번 클릭해야 작동
+
+            if (statusClickCount >= 5) {
+                statusClickCount = 0;
+                openAdminModal();
+            }
+        }
+
+        function openAdminModal() {
+            const modal = document.getElementById('adminModal');
+            const loginView = document.getElementById('adminLoginView');
+            const controlView = document.getElementById('adminControlView');
+            const pinInput = document.getElementById('adminPinInput');
+            const pinError = document.getElementById('adminPinError');
+
+            pinError.classList.add('hidden');
+            pinInput.value = '';
+
+            if (isAdminAuthenticated) {
+                loginView.classList.add('hidden');
+                controlView.classList.remove('hidden');
+            } else {
+                loginView.classList.remove('hidden');
+                controlView.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            if (!isAdminAuthenticated) {
+                setTimeout(() => pinInput.focus(), 100);
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        function verifyAdminPin() {
+            const pinInput = document.getElementById('adminPinInput');
+            const pinError = document.getElementById('adminPinError');
+
+            if (pinInput.value === '7409') {
+                isAdminAuthenticated = true;
+                pinError.classList.add('hidden');
+                document.getElementById('adminLoginView').classList.add('hidden');
+                document.getElementById('adminControlView').classList.remove('hidden');
+                showToast('관리자 권한으로 접속되었습니다.');
+            } else {
+                pinError.classList.remove('hidden');
+                pinInput.value = '';
+                pinInput.focus();
+            }
+        }
+
+        // 모달 바깥 영역 클릭 시 닫기
+        document.getElementById('adminModal').addEventListener('click', (e) => {
+            if (e.target.id === 'adminModal') {
+                closeAdminModal();
+            }
+        });
+
+        // 2. 테마 설정 (기본값: 어두운 화면)
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsMenu = document.getElementById('settingsMenu');
+
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsMenu.classList.add('hidden');
+            }
+        });
+
+        function setTheme(mode) {
+            const htmlEl = document.documentElement;
+            const checkDark = document.getElementById('checkDark');
+            const checkLight = document.getElementById('checkLight');
+
+            if (mode === 'dark') {
+                htmlEl.classList.add('dark');
+                checkDark.classList.remove('hidden');
+                checkLight.classList.add('hidden');
+            } else {
+                htmlEl.classList.remove('dark');
+                checkDark.classList.add('hidden');
+                checkLight.classList.remove('hidden');
+            }
+            settingsMenu.classList.add('hidden');
+        }
+
+        // 3. 클립보드 복사 함수
+        function copyText(text, successMsg) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            tempInput.style.position = 'fixed';
+            tempInput.style.left = '-9999px';
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast(successMsg);
+            } catch (err) {
+                showToast('복사에 실패했습니다. 직접 선택해 복사해 주세요.');
+            }
+            
+            document.body.removeChild(tempInput);
+        }
+
+        // 4. 토스트 알림 제어
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            
+            toastMsg.textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 2500);
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            setTheme('dark'); // 기본값 어두운 화면 적용
+        });
+    </script>
+</body>
+</html>
